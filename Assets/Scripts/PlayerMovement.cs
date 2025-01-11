@@ -3,26 +3,28 @@
 using System;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour {
+public class PlayerMovement : MonoBehaviour
+{
 
     //Assingables
     public Transform playerCam;
     public Transform orientation;
-    
+
     //Other
     private Rigidbody rb;
+    private Animator animator;
 
     //Rotation and look
     private float xRotation;
     private float sensitivity = 50f;
     private float sensMultiplier = 1f;
-    
+
     //Movement
     public float moveSpeed = 4500;
     public float maxSpeed = 20;
     public bool grounded;
     public LayerMask whatIsGround;
-    
+
     public float counterMovement = 0.175f;
     private float threshold = 0.01f;
     public float maxSlopeAngle = 35f;
@@ -37,44 +39,67 @@ public class PlayerMovement : MonoBehaviour {
     private bool readyToJump = true;
     private float jumpCooldown = 0.25f;
     public float jumpForce = 550f;
-    
+
     //Input
     float x, y;
     bool jumping, sprinting, crouching;
-    
+
     //Sliding
     private Vector3 normalVector = Vector3.up;
     private Vector3 wallNormalVector;
 
-    void Awake() {
+    void Awake()
+    {
         rb = GetComponent<Rigidbody>();
+        animator = GetComponent<Animator>();
     }
-    
-    void Start() {
-        playerScale =  transform.localScale;
+
+    void Start()
+    {
+        playerScale = transform.localScale;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    
-    private void FixedUpdate() {
+    private void FixedUpdate()
+    {
         Movement();
     }
 
-    private void Update() {
+    private void Update()
+    {
         MyInput();
         Look();
+        UpdateAnimations();
     }
 
-    /// <summary>
-    /// Find user input. Should put this in its own class but im lazy
-    /// </summary>
-    private void MyInput() {
+    private void UpdateAnimations()
+    {
+        float speed = rb.linearVelocity.magnitude;
+        animator.SetFloat("Speed", speed);
+        animator.SetBool("IsJumping", !grounded);
+        animator.SetBool("IsCrouching", crouching);
+
+        // Set walking/running states
+        if (speed > 0.1f)
+        {
+            animator.SetBool("IsWalking", true);
+            animator.SetBool("IsRunning", speed > 5f);
+        }
+        else
+        {
+            animator.SetBool("IsWalking", false);
+            animator.SetBool("IsRunning", false);
+        }
+    }
+
+    private void MyInput()
+    {
         x = Input.GetAxisRaw("Horizontal");
         y = Input.GetAxisRaw("Vertical");
         jumping = Input.GetButton("Jump");
         crouching = Input.GetKey(KeyCode.LeftControl);
-      
+
         //Crouching
         if (Input.GetKeyDown(KeyCode.LeftControl))
             StartCrouch();
